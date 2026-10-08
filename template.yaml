@@ -6,6 +6,7 @@ metadata:
   title: Create feature for a software component
   description: Create a new feature for a software component
   tags:
+    - spec
     - workflow
 
 spec:
@@ -25,15 +26,46 @@ spec:
           description: GitHub organization that hosts the component's repository
           default: ServerlessOpsIO
           ui:widget: hidden
+        owner:
+          title: Owner
+          type: string
+          description: |
+            Owning group of entity.
+          ui:field: MyGroupsPicker
+          ui:options:
+            allowArbitraryValues: false
+        domain:
+          title: Domain
+          type: string
+          description: Domain the component belongs to.
+          ui:field: SoContextualEntityPicker
+          ui:options:
+            allowArbitraryValues: false
+            catalogFilter:
+              - kind: Domain
+            defaultKind: Domain
+        system:
+          title: System
+          type: string
+          description: System the component belongs to.
+          ui:field: SoContextualEntityPicker
+          ui:options:
+            allowArbitraryValues: false
+            catalogFilter:
+              - kind: System
+                relations.partOf: "{{ parameters.domain }}"
+            defaultKind: System
         component:
           title: Component
           type: string
-          description: Existing component to add the feature to. Its repository must have Spec Kit initialized.
-          ui:field: EntityPicker
+          description: Component the feature will be added to.
+          ui:field: SoContextualEntityPicker
           ui:options:
             allowArbitraryValues: false
             catalogFilter:
               - kind: Component
+                relations.partOf: "{{ parameters.system }}"
+            defaultKind: Component
 
     - title: Feature
       required:
