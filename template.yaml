@@ -1,0 +1,178 @@
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: speckit-feature
+  title: Create feature for a software component
+  description: Create a new feature for a software component
+  tags:
+    - workflow
+
+spec:
+  owner: group:00gjdgxs1ur6lsu
+  type: component
+
+  parameters:
+    - title: Component
+      description: Component to add the feature to
+      required:
+        - github_org
+        - component
+      properties:
+        github_org:
+          title: GitHub Org
+          type: string
+          description: GitHub organization that hosts the component's repository
+          default: ServerlessOpsIO
+          ui:widget: hidden
+        component:
+          title: Component
+          type: string
+          description: Existing component to add the feature to. Its repository must have Spec Kit initialized.
+          ui:field: EntityPicker
+          ui:options:
+            allowArbitraryValues: false
+            catalogFilter:
+              - kind: Component
+
+    - title: Feature
+      required:
+        - speckit_specify
+        - github_auth
+      properties:
+        speckit_specify:
+          title: Feature description
+          type: string
+          description: What the feature should do and why. Focus on the requirements rather than the technology.
+          ui:widget: textarea
+        speckit_plan:
+          title: Technical guidance
+          type: string
+          description: Optional technology choices or constraints for the implementation plan
+          ui:widget: textarea
+        speckit_implement:
+          title: Implement the feature
+          type: boolean
+          description: Launch Copilot to implement the tasks after they are created
+          default: false
+        github_auth:
+          type: string
+          ui:field: SoRequestUserCredentials
+          ui:options:
+            host: github.com
+            requestUserCredentials:
+              secretsKey: USER_GITHUB_TOKEN
+              additionalScopes:
+                github:
+                  - read:user
+
+  steps:
+    - id: speckit-specify
+      name: Create SpecKit spec
+      action: github:copilot:speckit:specify
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        prompt: ${{ parameters.speckit_specify }}
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: speckit-plan
+      name: Create SpecKit plan
+      action: github:copilot:speckit:plan
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        baseRef: ${{ steps['speckit-specify'].output.headRef }}
+        prompt: "${{ parameters.speckit_plan or 'Create an implementation plan for the feature specification. Follow the technology choices already used in this repository.' }}"
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: speckit-checklist
+      name: Create SpecKit checklist
+      action: github:copilot:speckit:checklist
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        baseRef: ${{ steps['speckit-plan'].output.headRef }}
+        prompt: Create a quality checklist for the feature specification.
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: speckit-tasks
+      name: Create SpecKit tasks
+      action: github:copilot:speckit:tasks
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        baseRef: ${{ steps['speckit-checklist'].output.headRef }}
+        prompt: Break the implementation plan into tasks.
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: speckit-taskstoissues
+      name: Create SpecKit tasks to issues
+      action: github:copilot:speckit:taskstoissues
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        baseRef: ${{ steps['speckit-tasks'].output.headRef }}
+        prompt: Create a GitHub issue for each task.
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: speckit-analyze
+      name: Analyze SpecKit tasks
+      action: github:copilot:speckit:analyze
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        baseRef: ${{ steps['speckit-taskstoissues'].output.headRef }}
+        prompt: Check the specification, plan, and tasks for consistency and coverage.
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: speckit-implement
+      name: Implement SpecKit tasks
+      action: github:copilot:speckit:implement
+      if: ${{ parameters.speckit_implement }}
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        baseRef: ${{ steps['speckit-analyze'].output.headRef }}
+        prompt: Implement the tasks for this feature.
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: speckit-converge
+      name: Converge SpecKit tasks
+      action: github:copilot:speckit:converge
+      if: ${{ parameters.speckit_implement }}
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        baseRef: ${{ steps['speckit-implement'].output.headRef }}
+        prompt: Bring the specification, plan, tasks, and implementation into agreement.
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+  output:
+    links:
+      - title: Specification task
+        url: ${{ steps['speckit-specify'].output.taskUrl }}
+      - title: Analysis task
+        url: ${{ steps['speckit-analyze'].output.taskUrl }}
+      - title: Implementation task
+        url: ${{ steps['speckit-implement'].output.taskUrl if parameters.speckit_implement else nil }}
+      - title: Converge task
+        url: ${{ steps['speckit-converge'].output.taskUrl if parameters.speckit_implement else nil }}
+      - title: Component in catalog
+        icon: catalog
+        entityRef: ${{ parameters.component }}
