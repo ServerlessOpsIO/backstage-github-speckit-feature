@@ -2,9 +2,9 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: 1-speckit-feature
-  title: Create feature spec
-  description: Create a new feature spec for a software component
+  name: 2-speckit-plan
+  title: Create feature plan
+  description: Create an implementation plan for an existing feature spec of a software component
   tags:
     - spec
     - workflow
@@ -14,11 +14,12 @@ spec:
   type: component
 
   parameters:
-    - title: Component
-      description: Component to add the feature to
+    - title: Spec
+      description: Feature spec to plan
       required:
         - github_org
         - component
+        - spec
       properties:
         github_org:
           title: GitHub Org
@@ -26,14 +27,6 @@ spec:
           description: GitHub organization that hosts the component's repository
           default: ServerlessOpsIO
           ui:widget: hidden
-        owner:
-          title: Owner
-          type: string
-          description: |
-            Owning group of entity.
-          ui:field: MyGroupsPicker
-          ui:options:
-            allowArbitraryValues: false
         domain:
           title: Domain
           type: string
@@ -58,7 +51,7 @@ spec:
         component:
           title: Component
           type: string
-          description: Component the feature will be added to.
+          description: Component the feature belongs to.
           ui:field: SoContextualEntityPicker
           ui:options:
             allowArbitraryValues: false
@@ -66,19 +59,24 @@ spec:
               - kind: Component
                 relations.partOf: "{{ parameters.system }}"
             defaultKind: Component
+        # Specs appear in the catalog once their spec pull request is merged.
+        spec:
+          title: Spec
+          type: string
+          description: Feature spec to create the plan for.
+          ui:field: SoContextualEntityPicker
+          ui:options:
+            allowArbitraryValues: false
+            catalogFilter:
+              - kind: Resource
+                spec.type: doc-spec
+                relations.dependsOn: "{{ parameters.component }}"
+            defaultKind: Resource
 
-    - title: Feature
+    - title: Plan
       required:
-        - speckit_specify
         - github_auth
       properties:
-        speckit_specify:
-          title: Feature description
-          type: string
-          description: What the feature should do and why. Focus on the requirements rather than the technology.
-          ui:widget: textarea
-          ui:options:
-            rows: 6
         speckit_plan:
           title: Technical guidance
           type: string
@@ -98,6 +96,12 @@ spec:
                   - read:user
 
   steps:
+    - id: fetch-spec
+      name: Fetch spec
+      action: catalog:fetch
+      input:
+        entityRef: ${{ parameters.spec }}
+
     - id: clone
       name: Clone component repository
       action: x_github:clone
@@ -107,38 +111,39 @@ spec:
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
-    - id: fetch-component
-      name: Fetch component
-      action: catalog:fetch
-      input:
-        entityRef: ${{ parameters.component }}
-
     - id: speckit-workflow
-      name: Create spec, plan, and spec branch
+      name: Create plan and plan branch
       action: github:speckit:workflow
       input:
         workflow: |
           schema_version: "1.0"
           workflow:
-            id: specify-plan-branch
-            name: Specify, plan, and create spec branch
+            id: plan-branch
+            name: Plan and create plan branch
             version: 1.0.0
-            description: Runs specify and plan, then creates a spec/<spec directory name> branch
+            description: Runs plan for an existing feature, then creates a plan/<spec directory name> branch
 
           inputs:
-            spec:
+            feature_directory:
               type: string
               required: true
             plan:
               type: string
-              required: true
+              required: false
+              default: ""
 
           steps:
-            - id: specify
-              command: speckit.specify
-              integration: copilot
-              input:
-                args: "{{ inputs.spec }}"
+            # .specify/feature.json isn't committed, so record the feature
+            # directory for plan to work on.
+            - id: feature
+              type: shell
+              run: |
+                set -eu
+                feature_dir="{{ inputs.feature_directory }}"
+                test -f "$feature_dir/spec.md"
+                mkdir -p .specify
+                printf '{\n  "feature_directory": "%s"\n}\n' "$feature_dir" > .specify/feature.json
+                echo "Planning $feature_dir"
 
             - id: plan
               command: speckit.plan
@@ -146,105 +151,64 @@ spec:
               input:
                 args: "{{ inputs.plan }}"
 
-            # specify records the new feature directory, such as
-            # specs/20261012-143000-photo-album, in .specify/feature.json.
-            # The branch is named after that directory, including its timestamp
-            # or number, such as spec/20261012-143000-photo-album.
             - id: branch
               type: shell
               run: |
                 set -eu
-                feature_dir=$(python3 -c 'import json; print(json.load(open(".specify/feature.json"))["feature_directory"])')
-                spec_dir_name=$(basename "$feature_dir")
-                git checkout -b "spec/$spec_dir_name"
-                echo "Created branch spec/$spec_dir_name"
+                spec_dir_name=$(basename "{{ inputs.feature_directory }}")
+                git checkout -b "plan/$spec_dir_name"
+                echo "Created branch plan/$spec_dir_name"
         inputs:
-          spec: ${{ parameters.speckit_specify }}
-          plan: ${{ parameters.speckit_plan }}
+          feature_directory: ${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}
+          plan: ${{ parameters.speckit_plan | default('') }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
-    - id: spec-catalog
-      name: Create spec catalog file
-      action: fetch:template
-      input:
-        url: ./skeleton/spec-catalog
-        targetPath: ${{ steps['speckit-workflow'].output.specDirectory }}
-        values:
-          component: ${{ parameters.component }}
-          component_name: ${{ parameters.component | parseEntityRef | pick('name') }}
-          github_org: ${{ parameters.github_org }}
-          spec_directory: ${{ steps['speckit-workflow'].output.specDirectory }}
-          spec_id: ${{ steps['speckit-workflow'].output.specId }}
-          spec_title: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}
-          description: ${{ parameters.speckit_specify }}
-          owner: ${{ steps['fetch-component'].output.entity.spec.owner }}
-          system: ${{ steps['fetch-component'].output.entity.spec.system }}
-
-    - id: commit-spec
-      name: Commit spec changes
+    - id: commit-plan
+      name: Commit plan changes
       action: x_github:commit
       input:
-        commitMessage: "Add spec and plan: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}"
+        commitMessage: "Add plan: ${{ steps['fetch-spec'].output.entity.metadata.title }}"
         gitAuthorName: ${{ user.entity.spec.profile.displayName }}
         gitAuthorEmail: ${{ user.entity.spec.profile.email }}
 
-    - id: push-spec-branch
-      name: Push spec branch
+    - id: push-plan-branch
+      name: Push plan branch
       action: x_github:push
       input:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        branch: spec/${{ steps['speckit-workflow'].output.specDirectory.split('/') | last }}
+        branch: plan/${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'].split('/') | last }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
-    - id: open-spec-pr
-      name: Open draft spec pull request
+    - id: open-plan-pr
+      name: Open draft plan pull request
       action: x_github:pr:create
       input:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        head: ${{ steps['push-spec-branch'].output.branch }}
-        title: "Spec and plan: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}"
-        description: ${{ parameters.speckit_specify }}
+        head: ${{ steps['push-plan-branch'].output.branch }}
+        title: "Plan: ${{ steps['fetch-spec'].output.entity.metadata.title }}"
+        description: ${{ parameters.speckit_plan | default('Implementation plan for ' + steps['fetch-spec'].output.entity.metadata.title, true) }}
         draft: true
         labels:
-          - spec
-        userCredentialsSecretKey: USER_GITHUB_TOKEN
-      secrets:
-        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
-
-    - id: clarify-spec
-      name: Ask Copilot to clarify the spec
-      action: x_github:pr:comment
-      input:
-        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        pullRequestNumber: ${{ steps['open-spec-pr'].output.pullRequestNumber }}
-        # .specify/feature.json isn't committed, so name the spec directory for
-        # Spec Kit explicitly.
-        body: |
-          @copilot run the /speckit-clarify skill. Then take all the clarification questions you come up with and put them in a PR comment.
-
-          DO NOT START IMPLEMENTATION.
-
-          The spec for this pull request is `${{ steps['speckit-workflow'].output.specDirectory }}/spec.md`, in the feature directory `${{ steps['speckit-workflow'].output.specDirectory }}`. Set `SPECIFY_FEATURE_DIRECTORY=${{ steps['speckit-workflow'].output.specDirectory }}` when running Spec Kit so it works on this feature.
+          - plan
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
   output:
     links:
-      - title: Spec pull request
+      - title: Plan pull request
         icon: github
-        url: ${{ steps['open-spec-pr'].output.pullRequestUrl }}
-      - title: Spec on GitHub
+        url: ${{ steps['open-plan-pr'].output.pullRequestUrl }}
+      - title: Plan on GitHub
         icon: github
-        url: https://github.com/${{ parameters.github_org }}/${{ parameters.component | parseEntityRef | pick('name') }}/tree/${{ steps['push-spec-branch'].output.branch }}/${{ steps['speckit-workflow'].output.specDirectory }}
-      # Catalog discovery picks up the spec once its branch is merged to main.
-      - title: Spec in catalog (after merge)
+        url: https://github.com/${{ parameters.github_org }}/${{ parameters.component | parseEntityRef | pick('name') }}/blob/${{ steps['push-plan-branch'].output.branch }}/${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}/plan.md
+      - title: Spec in catalog
         icon: catalog
-        entityRef: resource:default/${{ parameters.component | parseEntityRef | pick('name') }}-spec-${{ steps['speckit-workflow'].output.specId }}
+        entityRef: ${{ parameters.spec }}
       - title: Component in catalog
         icon: catalog
         entityRef: ${{ parameters.component }}
