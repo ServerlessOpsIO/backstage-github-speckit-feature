@@ -19,7 +19,6 @@ spec:
       required:
         - github_org
         - component
-        - spec
       properties:
         github_org:
           title: GitHub Org
