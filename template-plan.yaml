@@ -60,6 +60,13 @@ spec:
                 relations.partOf: "{{ parameters.system }}"
             defaultKind: Component
         # Specs appear in the catalog once their spec pull request is merged.
+
+    - title: Plan
+      required:
+        - spec
+        - speckit_plan
+        - github_auth
+      properties:
         spec:
           title: Spec
           type: string
@@ -72,11 +79,6 @@ spec:
                 spec.type: doc-spec
                 relations.dependsOn: "{{ parameters.component }}"
             defaultKind: Resource
-
-    - title: Plan
-      required:
-        - github_auth
-      properties:
         speckit_plan:
           title: Technical guidance
           type: string
