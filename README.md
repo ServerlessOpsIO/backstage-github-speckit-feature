@@ -24,7 +24,7 @@ Each task starts from the branch that the previous task worked on, so every step
 
 ## Prerequisites
 
-- The Backstage instance has the `scaffolder-backend-module-github-copilot` module installed, which provides the `github:copilot:speckit:*` actions.
+- The Backstage instance has the `scaffolder-backend-module-github-speckit` module installed, which provides the `github:speckit:*` actions.
 - The component's repository already exists on GitHub and has Spec Kit initialized for Copilot.
 - The user running the template has a GitHub Copilot Business or Copilot Enterprise subscription. The template asks the user to sign in to GitHub so it can launch Copilot tasks on their behalf.
 
