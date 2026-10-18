@@ -13,6 +13,9 @@ metadata:
     - url: https://github.com/${{ values.github_org }}/${{ values.component_name }}/blob/main/${{ values.spec_directory }}/spec.md
       title: Specification
       icon: docs
+    - url: https://github.com/${{ values.github_org }}/${{ values.component_name }}/blob/main/${{ values.spec_directory }}/plan.md
+      title: Implementation plan
+      icon: docs
 spec:
   type: doc-spec
   owner: ${{ values.owner }}
