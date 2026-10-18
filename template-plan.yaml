@@ -215,6 +215,24 @@ spec:
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
+    - id: clarify-spec
+      name: Ask Copilot to clarify the spec
+      action: x_github:pr:comment
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        pullRequestNumber: ${{ steps['open-spec-pr'].output.pullRequestNumber }}
+        # .specify/feature.json isn't committed, so name the spec directory for
+        # Spec Kit explicitly.
+        body: |
+          @copilot run the /speckit-clarify skill. Then take all the clarification questions you come up with and put them in a PR comment.
+
+          DO NOT START IMPLEMENTATION.
+
+          The spec for this pull request is `${{ steps['speckit-workflow'].output.specDirectory }}/spec.md`, in the feature directory `${{ steps['speckit-workflow'].output.specDirectory }}`. Set `SPECIFY_FEATURE_DIRECTORY=${{ steps['speckit-workflow'].output.specDirectory }}` when running Spec Kit so it works on this feature.
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
   output:
     links:
       - title: Spec pull request
