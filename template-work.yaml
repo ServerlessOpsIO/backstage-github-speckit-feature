@@ -2,7 +2,7 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: speckit-feature
+  name: 3-speckit-work
   title: Create feature for a software component
   description: Create a new feature for a software component
   tags:
