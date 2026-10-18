@@ -2,8 +2,8 @@ apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: ${{ values.component_name }}-spec-${{ values.spec_id }}
-  title: ${{ values.spec_title | dump }}
-  description: ${{ (values.spec_id + ' - ' + values.description) | dump }}
+  title: ${{ (values.spec_id + ' - ' + values.spec_title) | dump }}
+  description: ${{ values.description | dump }}
   annotations:
     github.com/project-slug: ${{ values.github_org }}/${{ values.component_name }}
     serverlessops.io/spec-dir: ${{ values.spec_directory }}
