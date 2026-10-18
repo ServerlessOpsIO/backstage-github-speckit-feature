@@ -77,11 +77,15 @@ spec:
           type: string
           description: What the feature should do and why. Focus on the requirements rather than the technology.
           ui:widget: textarea
+          ui:options:
+            rows: 6
         speckit_plan:
           title: Technical guidance
           type: string
           description: Optional technology choices or constraints for the implementation plan
           ui:widget: textarea
+          ui:options:
+            rows: 12
         github_auth:
           type: string
           ui:field: SoRequestUserCredentials
