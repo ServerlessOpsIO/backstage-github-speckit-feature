@@ -196,20 +196,33 @@ spec:
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
-    - id: register-spec
-      name: Register spec in catalog
-      action: catalog:register
+    - id: open-spec-pr
+      name: Open draft spec pull request
+      action: x_github:pr:create
       input:
-        catalogInfoUrl: https://github.com/${{ parameters.github_org }}/${{ parameters.component | parseEntityRef | pick('name') }}/blob/${{ steps['push-spec-branch'].output.branch }}/${{ steps['speckit-workflow'].output.specDirectory }}/catalog-info.yaml
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        head: ${{ steps['push-spec-branch'].output.branch }}
+        title: "Spec and plan: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}"
+        description: ${{ parameters.speckit_specify }}
+        draft: true
+        labels:
+          - spec
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
   output:
     links:
+      - title: Spec pull request
+        icon: github
+        url: ${{ steps['open-spec-pr'].output.pullRequestUrl }}
       - title: Spec on GitHub
         icon: github
         url: https://github.com/${{ parameters.github_org }}/${{ parameters.component | parseEntityRef | pick('name') }}/tree/${{ steps['push-spec-branch'].output.branch }}/${{ steps['speckit-workflow'].output.specDirectory }}
-      - title: Spec in catalog
+      # Catalog discovery picks up the spec once its branch is merged to main.
+      - title: Spec in catalog (after merge)
         icon: catalog
-        entityRef: ${{ steps['register-spec'].output.entityRef }}
+        entityRef: resource:default/${{ parameters.component | parseEntityRef | pick('name') }}-spec-${{ steps['speckit-workflow'].output.specId }}
       - title: Component in catalog
         icon: catalog
         entityRef: ${{ parameters.component }}
