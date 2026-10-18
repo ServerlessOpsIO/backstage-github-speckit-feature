@@ -69,13 +69,18 @@ spec:
 
     - title: Feature
       required:
-        - speckit_specify
+        - speckit_specify_description
+        - speckit_specify_prompt
         - github_auth
       properties:
-        speckit_specify:
-          title: Feature description
+        speckit_specify_description:
+          title: Short description
           type: string
-          description: What the feature should do and why. Focus on the requirements rather than the technology.
+          description: A one-line summary of the feature, shown in the catalog.
+        speckit_specify_prompt:
+          title: Feature prompt
+          type: string
+          description: What the feature should do and why, for Spec Kit to write the spec from. Focus on the requirements rather than the technology.
           ui:widget: textarea
           ui:options:
             rows: 6
@@ -143,7 +148,7 @@ spec:
                 git checkout -b "spec/$spec_dir_name"
                 echo "Created branch spec/$spec_dir_name"
         inputs:
-          spec: ${{ parameters.speckit_specify }}
+          spec: ${{ parameters.speckit_specify_prompt }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
@@ -161,7 +166,7 @@ spec:
           spec_directory: ${{ steps['speckit-workflow'].output.specDirectory }}
           spec_id: ${{ steps['speckit-workflow'].output.specId }}
           spec_title: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}
-          description: ${{ parameters.speckit_specify }}
+          description: ${{ parameters.speckit_specify_description }}
           owner: ${{ steps['fetch-component'].output.entity.spec.owner }}
           system: ${{ steps['fetch-component'].output.entity.spec.system }}
 
@@ -190,7 +195,12 @@ spec:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
         head: ${{ steps['push-spec-branch'].output.branch }}
         title: "Spec: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}"
-        description: ${{ parameters.speckit_specify }}
+        description: |
+          ${{ parameters.speckit_specify_description }}
+
+          ## Feature prompt
+
+          ${{ parameters.speckit_specify_prompt }}
         draft: true
         labels:
           - spec
