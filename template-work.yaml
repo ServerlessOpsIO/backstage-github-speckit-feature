@@ -3,8 +3,8 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: 3-speckit-work
-  title: Create feature for a software component
-  description: Create a new feature for a software component
+  title: Implement feature
+  description: Turn the tasks of an existing feature spec into GitHub issues and implement them
   tags:
     - spec
     - workflow
@@ -14,8 +14,8 @@ spec:
   type: component
 
   parameters:
-    - title: Component
-      description: Component to add the feature to
+    - title: Spec
+      description: Feature spec to implement
       required:
         - github_org
         - component
@@ -26,14 +26,6 @@ spec:
           description: GitHub organization that hosts the component's repository
           default: ServerlessOpsIO
           ui:widget: hidden
-        owner:
-          title: Owner
-          type: string
-          description: |
-            Owning group of entity.
-          ui:field: MyGroupsPicker
-          ui:options:
-            allowArbitraryValues: false
         domain:
           title: Domain
           type: string
@@ -58,7 +50,7 @@ spec:
         component:
           title: Component
           type: string
-          description: Component the feature will be added to.
+          description: Component the feature belongs to.
           ui:field: SoContextualEntityPicker
           ui:options:
             allowArbitraryValues: false
@@ -67,25 +59,27 @@ spec:
                 relations.partOf: "{{ parameters.system }}"
             defaultKind: Component
 
-    - title: Feature
+    - title: Work
       required:
-        - speckit_specify
+        - spec
         - github_auth
       properties:
-        speckit_specify:
-          title: Feature description
+        spec:
+          title: Spec
           type: string
-          description: What the feature should do and why. Focus on the requirements rather than the technology.
-          ui:widget: textarea
-        speckit_plan:
-          title: Technical guidance
-          type: string
-          description: Optional technology choices or constraints for the implementation plan
-          ui:widget: textarea
-        speckit_implement:
-          title: Implement the feature
+          description: Feature spec to implement. Its plan and tasks must be merged.
+          ui:field: SoContextualEntityPicker
+          ui:options:
+            allowArbitraryValues: false
+            catalogFilter:
+              - kind: Resource
+                spec.type: doc-spec
+                relations.dependsOn: "{{ parameters.component }}"
+            defaultKind: Resource
+        add_implement_prompt:
+          title: Add implementation instructions
           type: boolean
-          description: Launch Copilot to implement the tasks after they are created
+          description: Give Copilot extra instructions for the implementation
           default: false
         github_auth:
           type: string
@@ -97,112 +91,144 @@ spec:
               additionalScopes:
                 github:
                   - read:user
+      # Shows the instructions field only when add_implement_prompt is checked.
+      dependencies:
+        add_implement_prompt:
+          oneOf:
+            - properties:
+                add_implement_prompt:
+                  enum: [false]
+            - properties:
+                add_implement_prompt:
+                  enum: [true]
+                speckit_implement_prompt:
+                  title: Implementation instructions
+                  type: string
+                  description: Instructions for the implementation, such as which tasks to work on
+                  ui:widget: textarea
+                  ui:options:
+                    rows: 2
 
   steps:
-    - id: speckit-specify
-      name: Create SpecKit spec
-      action: github:copilot:speckit:specify
+    - id: fetch-spec
+      name: Fetch spec
+      action: catalog:fetch
+      input:
+        entityRef: ${{ parameters.spec }}
+
+    - id: clone
+      name: Clone component repository
+      action: x_github:clone
       input:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        prompt: ${{ parameters.speckit_specify }}
-        waitForCompletion: true
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
-    - id: speckit-plan
-      name: Create SpecKit plan
-      action: github:copilot:speckit:plan
+    - id: speckit-workflow
+      name: Create task issues, implement, and create work branch
+      action: github:speckit:workflow
       input:
-        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        baseRef: ${{ steps['speckit-specify'].output.headRef }}
-        prompt: "${{ parameters.speckit_plan or 'Create an implementation plan for the feature specification. Follow the technology choices already used in this repository.' }}"
-        waitForCompletion: true
+        workflow: |
+          schema_version: "1.0"
+          workflow:
+            id: taskstoissues-implement-branch
+            name: Tasks to issues, implement, and create work branch
+            version: 1.0.0
+            description: Runs taskstoissues and implement for an existing feature, then creates a work/<spec directory name> branch
+
+          inputs:
+            feature_directory:
+              type: string
+              required: true
+            implement:
+              type: string
+              required: false
+              default: ""
+
+          steps:
+            # .specify/feature.json isn't committed, so record the feature
+            # directory for the commands to work on. Implementing needs the
+            # merged tasks from the plan template.
+            - id: feature
+              type: shell
+              run: |
+                set -eu
+                feature_dir="{{ inputs.feature_directory }}"
+                test -f "$feature_dir/tasks.md"
+                mkdir -p .specify
+                printf '{\n  "feature_directory": "%s"\n}\n' "$feature_dir" > .specify/feature.json
+                echo "Implementing $feature_dir"
+
+            # Created first, so the issues are made from the tasks as planned.
+            - id: taskstoissues
+              command: speckit.taskstoissues
+              integration: copilot
+
+            - id: implement
+              command: speckit.implement
+              integration: copilot
+              input:
+                args: "{{ inputs.implement }}"
+
+            - id: branch
+              type: shell
+              run: |
+                set -eu
+                spec_dir_name=$(basename "{{ inputs.feature_directory }}")
+                git checkout -b "work/$spec_dir_name"
+                echo "Created branch work/$spec_dir_name"
+        inputs:
+          feature_directory: ${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}
+          implement: ${{ parameters.speckit_implement_prompt if parameters.add_implement_prompt else '' }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
-    - id: speckit-checklist
-      name: Create SpecKit checklist
-      action: github:copilot:speckit:checklist
+    - id: commit-work
+      name: Commit implementation
+      action: x_github:commit
+      input:
+        commitMessage: "Implement: ${{ steps['fetch-spec'].output.entity.metadata.title }}"
+        gitAuthorName: ${{ user.entity.spec.profile.displayName }}
+        gitAuthorEmail: ${{ user.entity.spec.profile.email }}
+
+    - id: push-work-branch
+      name: Push work branch
+      action: x_github:push
       input:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        baseRef: ${{ steps['speckit-plan'].output.headRef }}
-        prompt: Create a quality checklist for the feature specification.
-        waitForCompletion: true
+        branch: work/${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'].split('/') | last }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
-    - id: speckit-tasks
-      name: Create SpecKit tasks
-      action: github:copilot:speckit:tasks
+    - id: open-work-pr
+      name: Open draft implementation pull request
+      action: x_github:pr:create
       input:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        baseRef: ${{ steps['speckit-checklist'].output.headRef }}
-        prompt: Break the implementation plan into tasks.
-        waitForCompletion: true
-        userCredentialsSecretKey: USER_GITHUB_TOKEN
-      secrets:
-        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
-
-    - id: speckit-taskstoissues
-      name: Create SpecKit tasks to issues
-      action: github:copilot:speckit:taskstoissues
-      input:
-        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        baseRef: ${{ steps['speckit-tasks'].output.headRef }}
-        prompt: Create a GitHub issue for each task.
-        waitForCompletion: true
-        userCredentialsSecretKey: USER_GITHUB_TOKEN
-      secrets:
-        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
-
-    - id: speckit-analyze
-      name: Analyze SpecKit tasks
-      action: github:copilot:speckit:analyze
-      input:
-        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        baseRef: ${{ steps['speckit-taskstoissues'].output.headRef }}
-        prompt: Check the specification, plan, and tasks for consistency and coverage.
-        waitForCompletion: true
-        userCredentialsSecretKey: USER_GITHUB_TOKEN
-      secrets:
-        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
-
-    - id: speckit-implement
-      name: Implement SpecKit tasks
-      action: github:copilot:speckit:implement
-      if: ${{ parameters.speckit_implement }}
-      input:
-        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        baseRef: ${{ steps['speckit-analyze'].output.headRef }}
-        prompt: Implement the tasks for this feature.
-        waitForCompletion: true
-        userCredentialsSecretKey: USER_GITHUB_TOKEN
-      secrets:
-        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
-
-    - id: speckit-converge
-      name: Converge SpecKit tasks
-      action: github:copilot:speckit:converge
-      if: ${{ parameters.speckit_implement }}
-      input:
-        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        baseRef: ${{ steps['speckit-implement'].output.headRef }}
-        prompt: Bring the specification, plan, tasks, and implementation into agreement.
+        head: ${{ steps['push-work-branch'].output.branch }}
+        title: "Implement: ${{ steps['fetch-spec'].output.entity.metadata.title }}"
+        description: "Implementation of the tasks in `${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}/tasks.md`."
+        draft: true
+        labels:
+          - work
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
   output:
     links:
-      - title: Analysis task
-        url: ${{ steps['speckit-analyze'].output.taskUrl }}
-      - title: Implementation task
-        url: ${{ steps['speckit-implement'].output.taskUrl if parameters.speckit_implement else nil }}
-      - title: Converge task
-        url: ${{ steps['speckit-converge'].output.taskUrl if parameters.speckit_implement else nil }}
+      - title: Implementation pull request
+        icon: github
+        url: ${{ steps['open-work-pr'].output.pullRequestUrl }}
+      - title: Task issues
+        icon: github
+        url: https://github.com/${{ parameters.github_org }}/${{ parameters.component | parseEntityRef | pick('name') }}/issues
+      - title: Spec in catalog
+        icon: catalog
+        entityRef: ${{ parameters.spec }}
       - title: Component in catalog
         icon: catalog
         entityRef: ${{ parameters.component }}
