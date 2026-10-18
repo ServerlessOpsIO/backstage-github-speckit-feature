@@ -6,6 +6,7 @@ metadata:
   description: ${{ values.description | dump }}
   annotations:
     github.com/project-slug: ${{ values.github_org }}/${{ values.component_name }}
+    serverlessops.io/spec-dir: ${{ values.spec_directory }}
     backstage.io/source-location: url:https://github.com/${{ values.github_org }}/${{ values.component_name }}/tree/main/${{ values.spec_directory }}/
   tags:
     - speckit
