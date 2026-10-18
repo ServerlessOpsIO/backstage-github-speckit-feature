@@ -197,8 +197,6 @@ spec:
 
   output:
     links:
-      - title: Specification task
-        url: ${{ steps['speckit-specify'].output.taskUrl }}
       - title: Analysis task
         url: ${{ steps['speckit-analyze'].output.taskUrl }}
       - title: Implementation task

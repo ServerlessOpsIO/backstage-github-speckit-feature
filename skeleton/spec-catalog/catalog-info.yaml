@@ -1,0 +1,23 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.component_name }}-spec-${{ values.spec_id }}
+  title: ${{ values.spec_title | dump }}
+  description: ${{ values.description | dump }}
+  annotations:
+    github.com/project-slug: ${{ values.github_org }}/${{ values.component_name }}
+    backstage.io/source-location: url:https://github.com/${{ values.github_org }}/${{ values.component_name }}/tree/main/${{ values.spec_directory }}/
+  tags:
+    - speckit
+  links:
+    - url: https://github.com/${{ values.github_org }}/${{ values.component_name }}/blob/main/${{ values.spec_directory }}/spec.md
+      title: Specification
+      icon: docs
+spec:
+  type: doc-spec
+  owner: ${{ values.owner }}
+{%- if values.system %}
+  system: ${{ values.system }}
+{%- endif %}
+  dependsOn:
+    - ${{ values.component }}

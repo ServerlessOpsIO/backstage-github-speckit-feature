@@ -1,0 +1,133 @@
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: speckit-feature
+  title: Create feature for a software component
+  description: Create a new feature for a software component
+  tags:
+    - spec
+    - workflow
+
+spec:
+  owner: group:00gjdgxs1ur6lsu
+  type: component
+
+  parameters:
+    - title: Component
+      description: Component to add the feature to
+      required:
+        - github_org
+        - component
+      properties:
+        github_org:
+          title: GitHub Org
+          type: string
+          description: GitHub organization that hosts the component's repository
+          default: ServerlessOpsIO
+          ui:widget: hidden
+        owner:
+          title: Owner
+          type: string
+          description: |
+            Owning group of entity.
+          ui:field: MyGroupsPicker
+          ui:options:
+            allowArbitraryValues: false
+        domain:
+          title: Domain
+          type: string
+          description: Domain the component belongs to.
+          ui:field: SoContextualEntityPicker
+          ui:options:
+            allowArbitraryValues: false
+            catalogFilter:
+              - kind: Domain
+            defaultKind: Domain
+        system:
+          title: System
+          type: string
+          description: System the component belongs to.
+          ui:field: SoContextualEntityPicker
+          ui:options:
+            allowArbitraryValues: false
+            catalogFilter:
+              - kind: System
+                relations.partOf: "{{ parameters.domain }}"
+            defaultKind: System
+        component:
+          title: Component
+          type: string
+          description: Component the feature will be added to.
+          ui:field: SoContextualEntityPicker
+          ui:options:
+            allowArbitraryValues: false
+            catalogFilter:
+              - kind: Component
+                relations.partOf: "{{ parameters.system }}"
+            defaultKind: Component
+
+    - title: Feature
+      required:
+        - speckit_specify
+        - github_auth
+      properties:
+        speckit_specify:
+          title: Feature description
+          type: string
+          description: What the feature should do and why. Focus on the requirements rather than the technology.
+          ui:widget: textarea
+        speckit_plan:
+          title: Technical guidance
+          type: string
+          description: Optional technology choices or constraints for the implementation plan
+          ui:widget: textarea
+        speckit_implement:
+          title: Implement the feature
+          type: boolean
+          description: Launch Copilot to implement the tasks after they are created
+          default: false
+        github_auth:
+          type: string
+          ui:field: SoRequestUserCredentials
+          ui:options:
+            host: github.com
+            requestUserCredentials:
+              secretsKey: USER_GITHUB_TOKEN
+              additionalScopes:
+                github:
+                  - read:user
+
+  steps:
+    - id: speckit-specify
+      name: Create SpecKit spec
+      action: github:copilot:speckit:specify
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        prompt: ${{ parameters.speckit_specify }}
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: speckit-plan
+      name: Create SpecKit plan
+      action: github:copilot:speckit:plan
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        baseRef: ${{ steps['speckit-specify'].output.headRef }}
+        prompt: "${{ parameters.speckit_plan or 'Create an implementation plan for the feature specification. Follow the technology choices already used in this repository.' }}"
+        waitForCompletion: true
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+
+  output:
+    links:
+      - title: Specification task
+        url: ${{ steps['speckit-specify'].output.taskUrl }}
+      - title: Analysis task
+      - title: Component in catalog
+        icon: catalog
+        entityRef: ${{ parameters.component }}
