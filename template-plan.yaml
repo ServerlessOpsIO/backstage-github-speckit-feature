@@ -112,16 +112,16 @@ spec:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
     - id: speckit-workflow
-      name: Create plan and plan branch
+      name: Create plan, checklist, tasks, and plan branch
       action: github:speckit:workflow
       input:
         workflow: |
           schema_version: "1.0"
           workflow:
-            id: plan-branch
-            name: Plan and create plan branch
+            id: plan-checklist-tasks-branch
+            name: Plan, checklist, tasks, and create plan branch
             version: 1.0.0
-            description: Runs plan for an existing feature, then creates a plan/<spec directory name> branch
+            description: Runs plan, checklist, and tasks for an existing feature, then creates a plan/<spec directory name> branch
 
           inputs:
             feature_directory:
@@ -150,6 +150,14 @@ spec:
               integration: copilot
               input:
                 args: "{{ inputs.plan }}"
+
+            - id: checklist
+              command: speckit.checklist
+              integration: copilot
+
+            - id: tasks
+              command: speckit.tasks
+              integration: copilot
 
             - id: branch
               type: shell
@@ -194,6 +202,24 @@ spec:
         draft: true
         labels:
           - plan
+        userCredentialsSecretKey: USER_GITHUB_TOKEN
+      secrets:
+        USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
+
+    - id: analyze-plan
+      name: Ask Copilot to analyze the plan
+      action: x_github:pr:comment
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        pullRequestNumber: ${{ steps['open-plan-pr'].output.pullRequestNumber }}
+        # .specify/feature.json isn't committed, so name the spec directory for
+        # Spec Kit explicitly.
+        body: |
+          @copilot run the /speckit-analyze skill. Then take all the findings you come up with and put them in a PR comment.
+
+          DO NOT START IMPLEMENTATION.
+
+          The spec for this pull request is `${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}/spec.md`, with its plan and tasks in the feature directory `${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}`. Set `SPECIFY_FEATURE_DIRECTORY=${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}` when running Spec Kit so it works on this feature.
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
