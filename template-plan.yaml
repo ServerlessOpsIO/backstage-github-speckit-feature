@@ -203,6 +203,7 @@ spec:
         draft: true
         labels:
           - plan
+          - ${{ steps['fetch-spec'].output.entity.metadata.title }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
