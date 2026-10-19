@@ -126,16 +126,16 @@ spec:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
 
     - id: speckit-workflow
-      name: Create task issues, implement, and create work branch
+      name: Check out feature branch, create task issues, and implement
       action: github:speckit:workflow
       input:
         workflow: |
           schema_version: "1.0"
           workflow:
             id: taskstoissues-implement-branch
-            name: Tasks to issues, implement, and create work branch
+            name: Feature branch, tasks to issues, and implement
             version: 1.0.0
-            description: Runs taskstoissues and implement for an existing feature, then creates a work/<spec directory name> branch
+            description: Checks out or creates a feature/<spec directory name> branch, then runs taskstoissues and implement for an existing feature
 
           inputs:
             feature_directory:
@@ -147,6 +147,33 @@ spec:
               default: ""
 
           steps:
+            # Work on the feature branch from an earlier run when there is one, so
+            # this run builds on it and the push is a fast forward. The clone
+            # only has the default branch and no credentials, so authenticate
+            # with the token the workflow gets as GH_TOKEN.
+            - id: branch
+              type: shell
+              run: |
+                set -eu
+                branch="feature/$(basename "{{ inputs.feature_directory }}")"
+                auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "${GH_TOKEN:?GH_TOKEN is not set}" | base64 | tr -d '\n')"
+                status=0
+                git -c http.extraheader="$auth" ls-remote --exit-code --heads origin "$branch" >/dev/null || status=$?
+                case "$status" in
+                  0)
+                    git -c http.extraheader="$auth" fetch --depth=1 origin "+refs/heads/$branch:refs/remotes/origin/$branch"
+                    git checkout -b "$branch" "origin/$branch"
+                    echo "Checked out existing branch $branch"
+                    ;;
+                  2)
+                    git checkout -b "$branch"
+                    echo "Created branch $branch"
+                    ;;
+                  *)
+                    exit "$status"
+                    ;;
+                esac
+
             # .specify/feature.json isn't committed, so record the feature
             # directory for the commands to work on. Implementing needs the
             # merged tasks from the plan template.
@@ -170,14 +197,6 @@ spec:
               integration: copilot
               input:
                 args: "{{ inputs.implement }}"
-
-            - id: branch
-              type: shell
-              run: |
-                set -eu
-                spec_dir_name=$(basename "{{ inputs.feature_directory }}")
-                git checkout -b "feature/$spec_dir_name"
-                echo "Created branch feature/$spec_dir_name"
         inputs:
           feature_directory: ${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}
           implement: ${{ parameters.speckit_implement_prompt if parameters.add_implement_prompt else '' }}
@@ -194,11 +213,11 @@ spec:
         gitAuthorEmail: ${{ user.entity.spec.profile.email }}
 
     - id: push-work-branch
-      name: Push work branch
+      name: Push feature branch
       action: x_github:push
       input:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
-        branch: work/${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'].split('/') | last }}
+        branch: feature/${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'].split('/') | last }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
