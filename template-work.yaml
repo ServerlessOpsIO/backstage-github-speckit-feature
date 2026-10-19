@@ -176,8 +176,8 @@ spec:
               run: |
                 set -eu
                 spec_dir_name=$(basename "{{ inputs.feature_directory }}")
-                git checkout -b "work/$spec_dir_name"
-                echo "Created branch work/$spec_dir_name"
+                git checkout -b "feature/$spec_dir_name"
+                echo "Created branch feature/$spec_dir_name"
         inputs:
           feature_directory: ${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}
           implement: ${{ parameters.speckit_implement_prompt if parameters.add_implement_prompt else '' }}
