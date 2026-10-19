@@ -204,7 +204,8 @@ spec:
         draft: true
         labels:
           - spec
-          - ${{ steps['fetch-spec'].output.entity.metadata.title }}
+          # The spec directory name, such as 001-github-speckit-init.
+          - "${{ steps['speckit-workflow'].output.specDirectory.split('/') | last }}"
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}

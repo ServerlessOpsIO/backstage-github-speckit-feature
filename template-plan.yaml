@@ -203,7 +203,8 @@ spec:
         draft: true
         labels:
           - plan
-          - ${{ steps['fetch-spec'].output.entity.metadata.title }}
+          # The spec directory name, such as 001-github-speckit-init.
+          - "${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'].split('/') | last }}"
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
