@@ -196,7 +196,10 @@ spec:
               command: speckit.implement
               integration: copilot
               input:
-                args: "{{ inputs.implement }}"
+                args: |
+                  "{{ inputs.implement }}"
+
+                  Please implement each task phase as a separate commit.
         inputs:
           feature_directory: ${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}
           implement: ${{ parameters.speckit_implement_prompt if parameters.add_implement_prompt else '' }}
