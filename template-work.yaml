@@ -187,11 +187,6 @@ spec:
                 printf '{\n  "feature_directory": "%s"\n}\n' "$feature_dir" > .specify/feature.json
                 echo "Implementing $feature_dir"
 
-            # Created first, so the issues are made from the tasks as planned.
-            - id: taskstoissues
-              command: speckit.taskstoissues
-              integration: copilot
-
             - id: implement
               command: speckit.implement
               integration: copilot
