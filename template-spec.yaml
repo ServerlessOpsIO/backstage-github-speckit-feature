@@ -69,21 +69,70 @@ spec:
 
     - title: Feature
       required:
-        - speckit_specify_description
-        - speckit_specify_prompt
+        - spec_type
+        - spec_title
+        - story
+        - proposed_solution
+        - acceptance_criteria
         - github_auth
       properties:
-        speckit_specify_description:
-          title: Short description
+        spec_type:
+          title: Type
           type: string
-          description: A one-line summary of the feature, shown in the catalog.
-        speckit_specify_prompt:
-          title: Feature prompt
+          description: What kind of spec this is.
+          enum:
+            - feature
+            - bug
+            - documentation
+          default: feature
+          ui:widget: radio
+        spec_title:
+          title: Title
           type: string
-          description: What the feature should do and why, for Spec Kit to write the spec from. Focus on the requirements rather than the technology.
+          description: A short, single-line title for the spec and its tracking issue.
+        story:
+          title: Story
+          type: string
+          description: "As a ____, I can ____"
+          ui:placeholder: As a ____, I can ____
+        proposed_solution:
+          title: Proposed solution
+          type: string
+          description: What should be built and why. Focus on the requirements rather than the technology.
           ui:widget: textarea
           ui:options:
-            rows: 6
+            rows: 10
+        scope_boundaries:
+          title: Scope boundaries
+          type: string
+          description: Optional. What is explicitly in and out of scope.
+          ui:widget: textarea
+          ui:options:
+            rows: 5
+        dependencies:
+          title: Dependencies
+          type: string
+          description: Optional. Other work, systems or teams this depends on.
+          ui:widget: textarea
+          ui:options:
+            rows: 5
+        additional_context:
+          title: Additional context
+          type: string
+          description: Optional. Links, background or anything else that helps.
+          ui:widget: textarea
+          ui:options:
+            rows: 5
+        acceptance_criteria:
+          title: Acceptance criteria
+          type: string
+          description: A checklist of testable outcomes. Replace the placeholder item "- [ ] ..." with your own criteria.
+          default: "- [ ] ..."
+          # Rejects empty input and the untouched "- [ ] ..." placeholder.
+          pattern: '^(?![\s]*-[ ]\[ \][ ]\.\.\.[\s]*$)[\s\S]*\S[\s\S]*$'
+          ui:widget: textarea
+          ui:options:
+            rows: 5
         github_auth:
           type: string
           ui:field: SoRequestUserCredentials
@@ -94,6 +143,8 @@ spec:
               additionalScopes:
                 github:
                   - read:user
+                  # Needed to create the tracking issue as the requester.
+                  - repo
 
   steps:
     - id: clone
