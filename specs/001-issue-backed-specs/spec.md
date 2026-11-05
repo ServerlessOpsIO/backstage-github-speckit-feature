@@ -8,6 +8,14 @@
 
 **Input**: User description: "As an engineer my specs are recorded as Github issues. When creating a spec the work should be recorded in Github issues. While working on new features the work is not being captured in the system we use for tracking work. Additionally to improve specs the user should be shown the fields needed to write a good spec together on a single page."
 
+## Clarifications
+
+### Session 2026-11-05
+
+- Q: When the specification workflow is run again for the same feature, should it create another issue or reuse the existing issue? → A: Create a new issue for every new spec submission, even if it is for the same feature.
+- Q: If GitHub issue creation fails, should the workflow keep the generated spec artifacts or discard them? → A: Discard generated spec artifacts if issue creation fails.
+- Q: Which identity should be recorded as the creator of a spec tracking issue? → A: The authenticated workflow requester.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Create a tracked spec (Priority: P1)
@@ -22,6 +30,8 @@ As an engineer, I create a new feature specification and have that work immediat
 
 1. **Given** an engineer submits a new spec, **When** the spec is created, **Then** a new open GitHub issue is created for that spec in the target repository.
 2. **Given** the new issue is created, **When** the workflow completes, **Then** the issue number and link are visible in the resulting workflow outputs.
+3. **Given** a spec issue is created, **When** its creator is recorded, **Then** the issue is created under the authenticated workflow requester's identity.
+4. **Given** issue creation fails, **When** the workflow reports the failure, **Then** the generated spec artifacts are discarded and the spec is not reported as successfully tracked.
 
 ---
 
@@ -56,8 +66,8 @@ As a product owner or maintainer, I decide when an issue is complete, even if mu
 ### Edge Cases
 
 - What happens when issue creation permissions are missing or revoked at runtime?
-- How does the system handle repeated spec attempts for the same feature (new issue each time vs. explicit reuse)?
-- How does the system behave when a feature requires multiple PRs over time while preserving one issue for tracking?
+- Each new spec submission creates a separate issue, including repeat submissions for the same feature.
+- Multiple pull requests for one spec submission retain a reference to that submission's issue.
 
 ## Requirements *(mandatory)*
 
@@ -70,9 +80,10 @@ As a product owner or maintainer, I decide when an issue is complete, even if mu
 - **FR-005**: System MUST record the created issue identifier and link alongside the created spec artifacts so downstream workflows can consume them.
 - **FR-006**: System MUST include a reference to the linked issue in related pull requests when a valid issue identifier is available and a PR is being created.
 - **FR-007**: System MUST allow pull requests to proceed without an issue reference when no valid issue identifier exists, while explicitly reporting that linkage could not be applied.
-- **FR-008**: System MUST preserve issue linkage across multiple pull requests associated with the same feature until a human closes the issue.
+- **FR-008**: System MUST preserve issue linkage across multiple pull requests associated with the same spec submission until a human closes the issue.
 - **FR-009**: System MUST require explicit human action to close the issue; automated workflow events alone must never close it.
-- **FR-010**: System MUST surface an actionable failure when issue creation cannot be completed and must not report success for an untracked spec.
+- **FR-010**: System MUST discard generated spec artifacts and surface an actionable failure when issue creation cannot be completed; it must not report success for an untracked spec.
+- **FR-011**: System MUST create the spec tracking issue under the authenticated identity of the workflow requester.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -89,7 +100,7 @@ As a product owner or maintainer, I decide when an issue is complete, even if mu
 - **SC-002**: 100% of pull requests generated for features with a known issue include a visible issue reference.
 - **SC-003**: 0 spec tracking issues are auto-closed by workflow automation; issue closure always shows a human actor.
 - **SC-004**: At least 95% of engineers can complete a valid first-pass spec submission from the single-page field set without missing required information.
-- **SC-005**: For features requiring multiple pull requests, the same tracking issue remains linked across all related pull requests until human closure.
+- **SC-005**: For a spec submission requiring multiple pull requests, its tracking issue remains linked across all related pull requests until human closure.
 
 ## Assumptions
 
