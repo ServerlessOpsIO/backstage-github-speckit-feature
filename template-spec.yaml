@@ -174,19 +174,19 @@ spec:
           ## Acceptance criteria
 
           ${{ parameters.acceptance_criteria }}
-          {%- if parameters.scope_boundaries | trim %}
+          {%- if (parameters.scope_boundaries | default('', true)) | trim %}
 
           ## Scope boundaries
 
           ${{ parameters.scope_boundaries }}
           {%- endif %}
-          {%- if parameters.dependencies | trim %}
+          {%- if (parameters.dependencies | default('', true)) | trim %}
 
           ## Dependencies
 
           ${{ parameters.dependencies }}
           {%- endif %}
-          {%- if parameters.additional_context | trim %}
+          {%- if (parameters.additional_context | default('', true)) | trim %}
 
           ## Additional context
 
@@ -311,19 +311,19 @@ spec:
           ## Acceptance criteria
 
           ${{ parameters.acceptance_criteria }}
-          {%- if parameters.scope_boundaries | trim %}
+          {%- if (parameters.scope_boundaries | default('', true)) | trim %}
 
           ## Scope boundaries
 
           ${{ parameters.scope_boundaries }}
           {%- endif %}
-          {%- if parameters.dependencies | trim %}
+          {%- if (parameters.dependencies | default('', true)) | trim %}
 
           ## Dependencies
 
           ${{ parameters.dependencies }}
           {%- endif %}
-          {%- if parameters.additional_context | trim %}
+          {%- if (parameters.additional_context | default('', true)) | trim %}
 
           ## Additional context
 

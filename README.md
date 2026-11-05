@@ -25,15 +25,25 @@ Each task starts from the branch that the previous task worked on, so every step
 ## Prerequisites
 
 - The Backstage instance has the `scaffolder-backend-module-github-speckit` module installed, which provides the `github:speckit:*` actions.
+- The Backstage instance has `@backstage/plugin-scaffolder-backend-module-github` installed, which provides the `github:issues:create` action.
 - The component's repository already exists on GitHub and has Spec Kit initialized for Copilot.
 - The user running the template has a GitHub Copilot Business or Copilot Enterprise subscription. The template asks the user to sign in to GitHub so it can launch Copilot tasks on their behalf.
 
 ## Using the template
 
-The template asks for:
+The spec template asks for, on one page:
 
 - the existing component to add the feature to
-- a description of the feature to build, which is sent to `specify`
+- the spec type (feature, bug or documentation), a title and a story ("As a ____, I can ____")
+- the proposed solution and the acceptance criteria (the `- [ ] ...` placeholder must be replaced)
+- optionally, scope boundaries, dependencies and additional context
+
+Each submission first creates an open GitHub issue in the component's repository, as the requesting user, using `github:issues:create`. If that fails, the template stops before anything is cloned or generated. The issue URL is passed to `/speckit-specify`, so the spec is written from the issue. The issue number and link appear in the template outputs.
+
+The spec, plan and work pull requests reference the issue with `Refs #N`. The template never uses closing keywords and never closes the issue; a person closes it. If a spec has no valid issue number, the plan and work pull requests are still opened and note that issue linkage was not applied.
+
+The other templates ask for:
+
 - optional technical guidance, such as technology choices or constraints, which is sent to `plan`
 - whether Copilot should implement the feature after the tasks are created
 

@@ -90,11 +90,11 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T019 [P] Update `README.md`: document the `github:issues:create` action and its providing module `@backstage/plugin-scaffolder-backend-module-github`, the new one-page form fields, the issue-per-submission behaviour, and the no-auto-close rule (constitution quality gates)
-- [ ] T020 Render every optional-field combination of the `create-issue` body and the `spec-catalog` skeleton (all optional fields present, each absent, all absent) and confirm valid output with no empty headings or broken YAML (constitution principle I)
+- [X] T019 [P] Update `README.md`: document the `github:issues:create` action and its providing module `@backstage/plugin-scaffolder-backend-module-github`, the new one-page form fields, the issue-per-submission behaviour, and the no-auto-close rule (constitution quality gates)
+- [X] T020 Render every optional-field combination of the `create-issue` body and the `spec-catalog` skeleton (all optional fields present, each absent, all absent) and confirm valid output with no empty headings or broken YAML (constitution principle I)
 - [ ] T021 Run quickstart.md scenarios 1–2 as dry runs in the Backstage template editor (issue URL `.../issues/42` passed to specify; optional fields omitted)
 - [ ] T022 Run quickstart.md scenarios 3–6 in a sandbox Component (real issue by the requester with labels, failure without issue permission leaves no branch or PR, rerun makes a second issue, merge leaves the issue open)
-- [ ] T023 Verify YAML validity of all changed files (for example `python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" template-spec.yaml` after substituting placeholders, or the template editor's validation)
+- [X] T023 Verify YAML validity of all changed files (for example `python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" template-spec.yaml` after substituting placeholders, or the template editor's validation)
 
 ---
 
