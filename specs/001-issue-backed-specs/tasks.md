@@ -81,8 +81,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Audit `template-spec.yaml`, `template-plan.yaml`, `template-work.yaml` and the PR comment bodies for `close`, `closes`, `fix`, `fixes`, `resolve`, `resolves` followed by an issue reference, and for any issue update or close call; remove any found (FR-002, FR-009)
-- [ ] T018 [US3] Add a short comment next to each `Refs #` use in `template-spec.yaml`, `template-plan.yaml` and `template-work.yaml` stating that closing keywords must not be used because a human closes the issue
+- [X] T017 [US3] Audit `template-spec.yaml`, `template-plan.yaml`, `template-work.yaml` and the PR comment bodies for `close`, `closes`, `fix`, `fixes`, `resolve`, `resolves` followed by an issue reference, and for any issue update or close call; remove any found (FR-002, FR-009)
+- [X] T018 [US3] Add a short comment next to each `Refs #` use in `template-spec.yaml`, `template-plan.yaml` and `template-work.yaml` stating that closing keywords must not be used because a human closes the issue
 
 **Checkpoint**: All stories complete.
 
