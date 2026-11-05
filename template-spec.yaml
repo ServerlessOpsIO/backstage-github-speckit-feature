@@ -69,21 +69,70 @@ spec:
 
     - title: Feature
       required:
-        - speckit_specify_description
-        - speckit_specify_prompt
+        - spec_type
+        - spec_title
+        - story
+        - proposed_solution
+        - acceptance_criteria
         - github_auth
       properties:
-        speckit_specify_description:
-          title: Short description
+        spec_type:
+          title: Type
           type: string
-          description: A one-line summary of the feature, shown in the catalog.
-        speckit_specify_prompt:
-          title: Feature prompt
+          description: What kind of spec this is.
+          enum:
+            - feature
+            - bug
+            - documentation
+          default: feature
+          ui:widget: radio
+        spec_title:
+          title: Title
           type: string
-          description: What the feature should do and why, for Spec Kit to write the spec from. Focus on the requirements rather than the technology.
+          description: A short, single-line title for the spec and its tracking issue.
+        story:
+          title: Story
+          type: string
+          description: "As a ____, I can ____"
+          ui:placeholder: As a ____, I can ____
+        proposed_solution:
+          title: Proposed solution
+          type: string
+          description: What should be built and why. Focus on the requirements rather than the technology.
           ui:widget: textarea
           ui:options:
-            rows: 6
+            rows: 10
+        scope_boundaries:
+          title: Scope boundaries
+          type: string
+          description: Optional. What is explicitly in and out of scope.
+          ui:widget: textarea
+          ui:options:
+            rows: 5
+        dependencies:
+          title: Dependencies
+          type: string
+          description: Optional. Other work, systems or teams this depends on.
+          ui:widget: textarea
+          ui:options:
+            rows: 5
+        additional_context:
+          title: Additional context
+          type: string
+          description: Optional. Links, background or anything else that helps.
+          ui:widget: textarea
+          ui:options:
+            rows: 5
+        acceptance_criteria:
+          title: Acceptance criteria
+          type: string
+          description: A checklist of testable outcomes. Replace the placeholder item "- [ ] ..." with your own criteria.
+          default: "- [ ] ..."
+          # Rejects empty input and the untouched "- [ ] ..." placeholder.
+          pattern: '^(?![\s]*-[ ]\[ \][ ]\.\.\.[\s]*$)[\s\S]*\S[\s\S]*$'
+          ui:widget: textarea
+          ui:options:
+            rows: 5
         github_auth:
           type: string
           ui:field: SoRequestUserCredentials
@@ -94,8 +143,57 @@ spec:
               additionalScopes:
                 github:
                   - read:user
+                  # Needed to create the tracking issue as the requester.
+                  - repo
 
   steps:
+    # Runs first so a failure stops the workflow before any clone, branch, PR or
+    # spec artifacts exist.
+    - id: create-issue
+      name: Create spec tracking issue
+      action: github:issues:create
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        title: ${{ parameters.spec_title }}
+        labels:
+          - spec
+          - ${{ parameters.spec_type }}
+        body: |
+          ## Story
+
+          ${{ parameters.story }}
+
+          ## Type
+
+          ${{ parameters.spec_type }}
+
+          ## Proposed solution
+
+          ${{ parameters.proposed_solution }}
+
+          ## Acceptance criteria
+
+          ${{ parameters.acceptance_criteria }}
+          {%- if (parameters.scope_boundaries | default('', true)) | trim %}
+
+          ## Scope boundaries
+
+          ${{ parameters.scope_boundaries }}
+          {%- endif %}
+          {%- if (parameters.dependencies | default('', true)) | trim %}
+
+          ## Dependencies
+
+          ${{ parameters.dependencies }}
+          {%- endif %}
+          {%- if (parameters.additional_context | default('', true)) | trim %}
+
+          ## Additional context
+
+          ${{ parameters.additional_context }}
+          {%- endif %}
+        token: ${{ secrets.USER_GITHUB_TOKEN }}
+
     - id: clone
       name: Clone component repository
       action: x_github:clone
@@ -148,7 +246,7 @@ spec:
                 git checkout -b "spec/$spec_dir_name"
                 echo "Created branch spec/$spec_dir_name"
         inputs:
-          spec: ${{ parameters.speckit_specify_prompt }}
+          spec: ${{ steps['create-issue'].output.issueUrl }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
@@ -166,7 +264,9 @@ spec:
           spec_directory: ${{ steps['speckit-workflow'].output.specDirectory }}
           spec_id: ${{ steps['speckit-workflow'].output.specId }}
           spec_title: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}
-          description: ${{ parameters.speckit_specify_description }}
+          description: ${{ parameters.story }}
+          issue_url: ${{ steps['create-issue'].output.issueUrl }}
+          issue_number: ${{ steps['create-issue'].output.issueNumber }}
           owner: ${{ steps['fetch-component'].output.entity.spec.owner }}
           system: ${{ steps['fetch-component'].output.entity.spec.system }}
 
@@ -195,12 +295,40 @@ spec:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
         head: ${{ steps['push-spec-branch'].output.branch }}
         title: "Spec: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}"
+        # Refs only. Closing keywords (Closes, Fixes, Resolves) must not be used
+        # because a human closes the issue.
         description: |
-          ${{ parameters.speckit_specify_description }}
+          Refs #${{ steps['create-issue'].output.issueNumber }}
 
-          ## Feature prompt
+          ## Story
 
-          ${{ parameters.speckit_specify_prompt }}
+          ${{ parameters.story }}
+
+          ## Proposed solution
+
+          ${{ parameters.proposed_solution }}
+
+          ## Acceptance criteria
+
+          ${{ parameters.acceptance_criteria }}
+          {%- if (parameters.scope_boundaries | default('', true)) | trim %}
+
+          ## Scope boundaries
+
+          ${{ parameters.scope_boundaries }}
+          {%- endif %}
+          {%- if (parameters.dependencies | default('', true)) | trim %}
+
+          ## Dependencies
+
+          ${{ parameters.dependencies }}
+          {%- endif %}
+          {%- if (parameters.additional_context | default('', true)) | trim %}
+
+          ## Additional context
+
+          ${{ parameters.additional_context }}
+          {%- endif %}
         draft: true
         labels:
           - spec
@@ -230,6 +358,9 @@ spec:
 
   output:
     links:
+      - title: Spec tracking issue
+        icon: github
+        url: ${{ steps['create-issue'].output.issueUrl }}
       - title: Spec pull request
         icon: github
         url: ${{ steps['open-spec-pr'].output.pullRequestUrl }}
