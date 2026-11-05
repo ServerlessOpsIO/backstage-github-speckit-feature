@@ -1,0 +1,26 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: backstage-github-speckit-feature-spec-001
+  title: "001 - Issue backed specs"
+  description: "specs as github issues"
+  annotations:
+    github.com/project-slug: ServerlessOpsIO/backstage-github-speckit-feature
+    serverlessops.io/spec-dir: specs/001-issue-backed-specs
+    serverlessops.io/spec-number: "001"
+    backstage.io/source-location: url:https://github.com/ServerlessOpsIO/backstage-github-speckit-feature/tree/main/specs/001-issue-backed-specs/
+  tags:
+    - speckit
+  links:
+    - url: https://github.com/ServerlessOpsIO/backstage-github-speckit-feature/blob/main/specs/001-issue-backed-specs/spec.md
+      title: Specification
+      icon: docs
+    - url: https://github.com/ServerlessOpsIO/backstage-github-speckit-feature/blob/main/specs/001-issue-backed-specs/plan.md
+      title: Implementation plan
+      icon: docs
+spec:
+  type: doc-spec
+  owner: group:00gjdgxs1ur6lsu
+  system: backstage
+  dependsOn:
+    - component:default/backstage-github-speckit-feature
