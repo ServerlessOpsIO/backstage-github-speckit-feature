@@ -63,11 +63,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] In `template-spec.yaml`, rewrite the `open-spec-pr` `description` to start with `Refs #${{ steps['create-issue'].output.issueNumber }}` followed by the story and the spec fields (replacing the removed `speckit_specify_description` / `speckit_specify_prompt` references); never use `Closes`, `Fixes` or `Resolves` (FR-006, FR-002)
-- [ ] T013 [P] [US2] In `template-plan.yaml`, read `serverlessops.io/spec-issue` from `steps['fetch-spec'].output.entity.metadata.annotations` and add `Refs #<n>` to the `open-plan-pr` description only when the annotation holds a valid number; otherwise omit it without breaking rendering (FR-006, FR-007)
-- [ ] T014 [P] [US2] In `template-work.yaml`, make the same change to the implementation PR `description`, so every PR for the same spec submission keeps the reference (FR-008, SC-005)
-- [ ] T015 [US2] In `template-plan.yaml` and `template-work.yaml`, when no valid issue number exists, add a visible note to the PR description (or a template output text) saying issue linkage could not be applied (FR-007)
-- [ ] T016 [P] [US2] In `template-plan.yaml` and `template-work.yaml` `output.links`, add a "Spec tracking issue" link only when the annotation exists
+- [X] T012 [US2] In `template-spec.yaml`, rewrite the `open-spec-pr` `description` to start with `Refs #${{ steps['create-issue'].output.issueNumber }}` followed by the story and the spec fields (replacing the removed `speckit_specify_description` / `speckit_specify_prompt` references); never use `Closes`, `Fixes` or `Resolves` (FR-006, FR-002)
+- [X] T013 [P] [US2] In `template-plan.yaml`, read `serverlessops.io/spec-issue` from `steps['fetch-spec'].output.entity.metadata.annotations` and add `Refs #<n>` to the `open-plan-pr` description only when the annotation holds a valid number; otherwise omit it without breaking rendering (FR-006, FR-007)
+- [X] T014 [P] [US2] In `template-work.yaml`, make the same change to the implementation PR `description`, so every PR for the same spec submission keeps the reference (FR-008, SC-005)
+- [X] T015 [US2] In `template-plan.yaml` and `template-work.yaml`, when no valid issue number exists, add a visible note to the PR description (or a template output text) saying issue linkage could not be applied (FR-007)
+- [X] T016 [P] [US2] In `template-plan.yaml` and `template-work.yaml` `output.links`, add a "Spec tracking issue" link only when the annotation exists
 
 **Checkpoint**: User Stories 1 and 2 both work.
 

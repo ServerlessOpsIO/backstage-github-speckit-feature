@@ -227,7 +227,18 @@ spec:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
         head: ${{ steps['push-work-branch'].output.branch }}
         title: "Implement: ${{ steps['fetch-spec'].output.entity.metadata.title }}"
-        description: "Implementation of the tasks in `${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}/tasks.md`."
+        # Refs only. Closing keywords (Closes, Fixes, Resolves) must not be used
+        # because a human closes the issue.
+        description: |
+          Implementation of the tasks in `${{ steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-dir'] }}/tasks.md`.
+          {%- set issue_number = (steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-issue'] | default('', true)) | int %}
+          {%- if issue_number > 0 %}
+
+          Refs #${{ issue_number }}
+          {%- else %}
+
+          > Issue linkage could not be applied: no valid spec tracking issue number was found for this spec.
+          {%- endif %}
         draft: true
         labels:
           - work
@@ -245,6 +256,10 @@ spec:
       - title: Task issues
         icon: github
         url: https://github.com/${{ parameters.github_org }}/${{ parameters.component | parseEntityRef | pick('name') }}/issues
+      # Without a valid issue number, link to the spec issues list instead.
+      - title: ${{ 'Spec tracking issue' if ((steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-issue'] | default('', true)) | int) > 0 else 'Spec issues (no tracking issue linked)' }}
+        icon: github
+        url: https://github.com/${{ parameters.github_org }}/${{ parameters.component | parseEntityRef | pick('name') }}/${{ ('issues/' + steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-issue']) if ((steps['fetch-spec'].output.entity.metadata.annotations['serverlessops.io/spec-issue'] | default('', true)) | int) > 0 else 'issues?q=label%3Aspec' }}
       - title: Spec in catalog
         icon: catalog
         entityRef: ${{ parameters.spec }}

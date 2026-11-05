@@ -295,12 +295,40 @@ spec:
         repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
         head: ${{ steps['push-spec-branch'].output.branch }}
         title: "Spec: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}"
+        # Refs only. Closing keywords (Closes, Fixes, Resolves) must not be used
+        # because a human closes the issue.
         description: |
-          ${{ parameters.speckit_specify_description }}
+          Refs #${{ steps['create-issue'].output.issueNumber }}
 
-          ## Feature prompt
+          ## Story
 
-          ${{ parameters.speckit_specify_prompt }}
+          ${{ parameters.story }}
+
+          ## Proposed solution
+
+          ${{ parameters.proposed_solution }}
+
+          ## Acceptance criteria
+
+          ${{ parameters.acceptance_criteria }}
+          {%- if parameters.scope_boundaries | trim %}
+
+          ## Scope boundaries
+
+          ${{ parameters.scope_boundaries }}
+          {%- endif %}
+          {%- if parameters.dependencies | trim %}
+
+          ## Dependencies
+
+          ${{ parameters.dependencies }}
+          {%- endif %}
+          {%- if parameters.additional_context | trim %}
+
+          ## Additional context
+
+          ${{ parameters.additional_context }}
+          {%- endif %}
         draft: true
         labels:
           - spec
