@@ -147,6 +147,53 @@ spec:
                   - repo
 
   steps:
+    # Runs first so a failure stops the workflow before any clone, branch, PR or
+    # spec artifacts exist.
+    - id: create-issue
+      name: Create spec tracking issue
+      action: github:issues:create
+      input:
+        repoUrl: github.com?repo=${{ parameters.component | parseEntityRef | pick('name') }}&owner=${{ parameters.github_org }}
+        title: ${{ parameters.spec_title }}
+        labels:
+          - spec
+          - ${{ parameters.spec_type }}
+        body: |
+          ## Story
+
+          ${{ parameters.story }}
+
+          ## Type
+
+          ${{ parameters.spec_type }}
+
+          ## Proposed solution
+
+          ${{ parameters.proposed_solution }}
+
+          ## Acceptance criteria
+
+          ${{ parameters.acceptance_criteria }}
+          {%- if parameters.scope_boundaries | trim %}
+
+          ## Scope boundaries
+
+          ${{ parameters.scope_boundaries }}
+          {%- endif %}
+          {%- if parameters.dependencies | trim %}
+
+          ## Dependencies
+
+          ${{ parameters.dependencies }}
+          {%- endif %}
+          {%- if parameters.additional_context | trim %}
+
+          ## Additional context
+
+          ${{ parameters.additional_context }}
+          {%- endif %}
+        token: ${{ secrets.USER_GITHUB_TOKEN }}
+
     - id: clone
       name: Clone component repository
       action: x_github:clone
@@ -199,7 +246,7 @@ spec:
                 git checkout -b "spec/$spec_dir_name"
                 echo "Created branch spec/$spec_dir_name"
         inputs:
-          spec: ${{ parameters.speckit_specify_prompt }}
+          spec: ${{ steps['create-issue'].output.issueUrl }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
@@ -217,7 +264,9 @@ spec:
           spec_directory: ${{ steps['speckit-workflow'].output.specDirectory }}
           spec_id: ${{ steps['speckit-workflow'].output.specId }}
           spec_title: ${{ steps['speckit-workflow'].output.specName | replace('-', ' ') | capitalize }}
-          description: ${{ parameters.speckit_specify_description }}
+          description: ${{ parameters.story }}
+          issue_url: ${{ steps['create-issue'].output.issueUrl }}
+          issue_number: ${{ steps['create-issue'].output.issueNumber }}
           owner: ${{ steps['fetch-component'].output.entity.spec.owner }}
           system: ${{ steps['fetch-component'].output.entity.spec.system }}
 
@@ -281,6 +330,9 @@ spec:
 
   output:
     links:
+      - title: Spec tracking issue
+        icon: github
+        url: ${{ steps['create-issue'].output.issueUrl }}
       - title: Spec pull request
         icon: github
         url: ${{ steps['open-spec-pr'].output.pullRequestUrl }}
