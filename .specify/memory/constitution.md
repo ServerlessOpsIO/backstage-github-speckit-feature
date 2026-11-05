@@ -1,8 +1,8 @@
 <!--
 Sync Impact Report
-Version change: unratified scaffold → 1.0.0
-Modified principles: generic placeholder principles I–V → principles I–VI below.
-Added sections: Workflow Template Constraints; Development Workflow and Quality Gates.
+Version change: 1.0.0 → 2.0.0
+Modified principle: III no longer requires same-feature reruns to reuse an existing branch or avoid duplicate work.
+Added sections: none.
 Removed sections: none.
 Scope exclusions: Project-creation rules for rendering application skeletons and pipelines,
 publishing repositories, catalog registration, repository defaults/properties, and optional
@@ -68,8 +68,8 @@ directory annotation and repository links.
 
 Workflow templates MUST NOT push to or merge into the repository's default branch. They MUST
 push changes to named `spec/`, `plan/`, or `feature/` branches and open draft pull requests for
-review. Re-running a workflow for the same feature MUST continue from its existing branch and
-must not create duplicate work. Branch names MUST derive from the feature directory name.
+review. Branch names MUST derive from the feature directory name. Re-running a workflow for the
+same feature is not required to resume or reuse prior work.
 
 ### IV. Workflow steps are ordered and fail safely
 Each workflow MUST fetch the catalog entities it needs and clone the selected component
@@ -162,4 +162,4 @@ Versioning follows semantic versioning: MAJOR removes or incompatibly redefines 
 MINOR adds a principle or materially expands a section; PATCH clarifies wording or makes a
 non-semantic refinement. Amendments MUST be reviewed and approved through a pull request.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-29 | **Last Amended**: 2026-10-29
+**Version**: 2.0.0 | **Ratified**: 2026-10-29 | **Last Amended**: 2026-11-05
