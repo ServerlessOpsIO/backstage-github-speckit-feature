@@ -17,7 +17,7 @@
 
 **Purpose**: Confirm current state before editing.
 
-- [ ] T001 Review `template-spec.yaml`, `template-plan.yaml`, `template-work.yaml` and `skeleton/spec-catalog/catalog-info.yaml` against constitution principles I, IV, V and VI in `.specify/memory/constitution.md`, noting every use of `speckit_specify_description` and `speckit_specify_prompt` (all are removed by this feature)
+- [X] T001 Review `template-spec.yaml`, `template-plan.yaml`, `template-work.yaml` and `skeleton/spec-catalog/catalog-info.yaml` against constitution principles I, IV, V and VI in `.specify/memory/constitution.md`, noting every use of `speckit_specify_description` and `speckit_specify_prompt` (all are removed by this feature)
 
 ---
 
