@@ -6,7 +6,7 @@ Page 2 (all fields together):
 
 | Property | Widget | Rows | Required |
 |---|---|---|---|
-| spec_type | radio (feature, bug, documentation) | - | yes |
+| spec_type | radio (feature, bug, doc) | - | yes |
 | spec_title | text | - | yes |
 | story | text, prompt "As a ____, I can ____" | - | yes |
 | proposed_solution | textarea | 10 | yes |

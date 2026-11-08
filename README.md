@@ -12,8 +12,7 @@ The template runs these Spec Kit commands in order. Each one runs as a Copilot a
 2. `plan`: creates a technical implementation plan for the feature
 3. `checklist`: generates a quality checklist for the specification
 4. `tasks`: breaks the plan into tasks
-5. `taskstoissues`: turns the tasks into GitHub issues
-6. `analyze`: checks the specification, plan, and tasks for consistency and coverage
+5. `analyze`: checks the specification, plan, and tasks for consistency and coverage
 
 If you choose to implement the feature, two more commands run:
 
@@ -34,7 +33,7 @@ Each task starts from the branch that the previous task worked on, so every step
 The spec template asks for, on one page:
 
 - the existing component to add the feature to
-- the spec type (feature, bug or documentation), a title and a story ("As a ____, I can ____")
+- the spec type (feature, bug or doc), a title and a story ("As a ____, I can ____")
 - the proposed solution and the acceptance criteria (the `- [ ] ...` placeholder must be replaced)
 - optionally, scope boundaries, dependencies and additional context
 

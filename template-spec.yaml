@@ -83,7 +83,7 @@ spec:
           enum:
             - feature
             - bug
-            - documentation
+            - doc
           default: feature
           ui:widget: radio
         spec_title:
@@ -263,6 +263,7 @@ spec:
           description: ${{ parameters.story }}
           issue_url: ${{ steps['create-issue'].output.issueUrl }}
           issue_number: ${{ steps['create-issue'].output.issueNumber }}
+          spec_type: ${{ parameters.spec_type }}
           owner: ${{ steps['fetch-component'].output.entity.spec.owner }}
           system: ${{ steps['fetch-component'].output.entity.spec.system }}
 
