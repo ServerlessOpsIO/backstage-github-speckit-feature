@@ -76,8 +76,8 @@ Each workflow MUST fetch the catalog entities it needs and clone the selected co
 repository before running work that depends on them. It MUST then create or check out its
 named branch, run the applicable Spec Kit workflow, commit changes, push the branch, and open a
 pull request. The spec workflow additionally renders and commits the spec Resource catalog
-file; the plan workflow creates plan, checklist, and task artifacts; the work workflow
-implements the selected feature. Follow-up analysis or clarification comments
+file; the plan workflow creates plan, checklist, and task artifacts; the work workflow creates
+task issues and implements the selected feature. Follow-up analysis or clarification comments
 MUST target the pull request created by that run.
 
 Optional inputs MUST have honest defaults and MUST only be required when enabled. Conditional
@@ -120,13 +120,13 @@ Each template's `output.links` MUST link to the pull request and catalog entitie
 and to other resources it creates. In particular, spec output links include the spec pull
 request, spec branch content, the catalog Resource after merge, and the Component; plan output
 links include its pull request, plan, spec Resource, and Component; work output links include
-its pull request, linked spec issue, spec Resource, and Component.
+its pull request, task issues, spec Resource, and Component.
 
 ## Workflow Template Constraints
 This repository contains three workflow templates for work on existing Components. The
 specification workflow creates a feature spec and a `doc-spec` Resource catalog file; the plan
-workflow creates plan, checklist, and task artifacts; the work workflow implements the feature.
-None publishes a repository or registers a newly created project.
+workflow creates plan, checklist, and task artifacts; the work workflow creates task issues and
+implements the feature. None publishes a repository or registers a newly created project.
 
 The only skeleton directory is `skeleton/spec-catalog/`, containing the catalog Resource
 definition. There is no pipeline directory. Rules for generated application pipelines,

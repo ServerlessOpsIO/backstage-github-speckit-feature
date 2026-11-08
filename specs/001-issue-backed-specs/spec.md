@@ -15,7 +15,7 @@
 - Q: When the specification workflow is run again for the same feature, should it create another issue or reuse the existing issue? → A: Create a new issue for every new spec submission, even if it is for the same feature.
 - Q: If GitHub issue creation fails, should the workflow keep the generated spec artifacts or discard them? → A: Discard generated spec artifacts if issue creation fails.
 - Q: Which identity should be recorded as the creator of a spec tracking issue? → A: The authenticated workflow requester.
-- Q: Which fields and input formats must the one-page spec form provide? → A: Spec type (radio box: feature, bug, doc); required spec title (single-line free text); required story sentence (single-line free text prompted with “As a ____, I can ____”); required proposed solution (10-line text area); optional scope boundaries, dependencies, and additional context (each a 5-line text area); required acceptance criteria (5-line text area pre-populated with `- [ ] ...`).
+- Q: Which fields and input formats must the one-page spec form provide? → A: Spec type (radio box: feature, bug, documentation); required spec title (single-line free text); required story sentence (single-line free text prompted with “As a ____, I can ____”); required proposed solution (10-line text area); optional scope boundaries, dependencies, and additional context (each a 5-line text area); required acceptance criteria (5-line text area pre-populated with `- [ ] ...`).
 - Q: Should the acceptance criteria field be required or optional? → A: Required.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -78,7 +78,7 @@ As a product owner or maintainer, I decide when an issue is complete, even if mu
 - **FR-001**: System MUST create a new GitHub issue whenever a new spec is created through the specification workflow.
 - **FR-002**: System MUST create the issue in an open state and must not auto-close it as part of spec, planning, PR creation, merge, or post-merge automation.
 - **FR-003**: System MUST present all required spec-authoring fields together on one page before submission.
-- **FR-004**: The one-page authoring form MUST provide a spec type radio box with feature, bug, and doc options; a required single-line free-text spec title; a required single-line free-text story sentence with the prompt “As a ____, I can ____”; a required 10-line proposed solution text area; optional 5-line text areas for scope boundaries, dependencies, and additional context; and a required 5-line acceptance criteria text area pre-populated with `- [ ] ...`.
+- **FR-004**: The one-page authoring form MUST provide a spec type radio box with feature, bug, and documentation options; a required single-line free-text spec title; a required single-line free-text story sentence with the prompt “As a ____, I can ____”; a required 10-line proposed solution text area; optional 5-line text areas for scope boundaries, dependencies, and additional context; and a required 5-line acceptance criteria text area pre-populated with `- [ ] ...`.
 - **FR-005**: System MUST record the created issue identifier and link alongside the created spec artifacts so downstream workflows can consume them.
 - **FR-006**: System MUST include a reference to the linked issue in related pull requests when a valid issue identifier is available and a PR is being created.
 - **FR-007**: System MUST allow pull requests to proceed without an issue reference when no valid issue identifier exists, while explicitly reporting that linkage could not be applied.

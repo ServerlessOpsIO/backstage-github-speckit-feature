@@ -25,14 +25,14 @@
 - **Note**: The action's checkpoint key is `owner.repo.title`, which applies only to retries of the same task run, so it does not block new submissions with the same title.
 
 ## R6. Labels
-- **Decision**: Labels `spec` and the selected type (`feature`, `bug`, `doc`).
+- **Decision**: Labels `spec` and the selected type (`feature`, `bug`, `documentation`).
 - **Note**: The action drops labels silently if the user lacks push access. Missing labels do not fail the run.
 
 ## R7. No auto-close (FR-002, FR-009)
 - **Decision**: PR text uses `Refs #N` only, never `Closes`, `Fixes` or `Resolves`. No step calls an issue update or close API.
 
 ## R8. Form (FR-003, FR-004)
-- **Decision**: One page, with the catalog pickers moved to the first page as before. The second page holds: `spec_type` (enum `feature`, `bug`, `doc`; `ui:widget: radio`), `spec_title` (string), `story` (string, placeholder/description "As a ____, I can ____"), `proposed_solution` (textarea, rows 10), `scope_boundaries`, `dependencies`, `additional_context` (textarea, rows 5, optional), `acceptance_criteria` (textarea, rows 5, default `- [ ] ...`, required), plus `github_auth`.
+- **Decision**: One page, with the catalog pickers moved to the first page as before. The second page holds: `spec_type` (enum, `ui:widget: radio`), `spec_title` (string), `story` (string, placeholder/description "As a ____, I can ____"), `proposed_solution` (textarea, rows 10), `scope_boundaries`, `dependencies`, `additional_context` (textarea, rows 5, optional), `acceptance_criteria` (textarea, rows 5, default `- [ ] ...`, required), plus `github_auth`.
 - **Note**: The default `- [ ] ...` alone would pass a required check. Add a `pattern` or `minLength` to require that the user changes it.
 
 ## R9. Existing short description and PR linkage
