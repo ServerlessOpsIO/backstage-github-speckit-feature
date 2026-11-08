@@ -9,6 +9,7 @@ metadata:
     serverlessops.io/spec-dir: ${{ values.spec_directory }}
     serverlessops.io/spec-number: ${{ values.spec_id | dump }}
     serverlessops.io/spec-issue: ${{ values.issue_number | dump }}
+    serverlessops.io/spec-type: ${{ values.spec_type | dump }}
     backstage.io/source-location: url:https://github.com/${{ values.github_org }}/${{ values.component_name }}/tree/main/${{ values.spec_directory }}/
   tags:
     - speckit
