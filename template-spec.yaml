@@ -93,7 +93,7 @@ spec:
         story:
           title: Story
           type: string
-          description: "As a ____, I can ____"
+          description: "User story sentence"
           ui:placeholder: As a ____, I can ____
         proposed_solution:
           title: Proposed solution
@@ -163,10 +163,6 @@ spec:
 
           ${{ parameters.story }}
 
-          ## Type
-
-          ${{ parameters.spec_type }}
-
           ## Proposed solution
 
           ${{ parameters.proposed_solution }}
@@ -222,7 +218,7 @@ spec:
             description: Runs specify, then creates a spec/<spec directory name> branch
 
           inputs:
-            spec:
+            specUrl:
               type: string
               required: true
 
@@ -231,7 +227,7 @@ spec:
               command: speckit.specify
               integration: copilot
               input:
-                args: "{{ inputs.spec }}"
+                args: "{{ inputs.specUrl }}"
 
             # specify records the new feature directory, such as
             # specs/20261012-143000-photo-album, in .specify/feature.json.
@@ -246,7 +242,7 @@ spec:
                 git checkout -b "spec/$spec_dir_name"
                 echo "Created branch spec/$spec_dir_name"
         inputs:
-          spec: ${{ steps['create-issue'].output.issueUrl }}
+          specUrl: ${{ steps['create-issue'].output.issueUrl }}
         userCredentialsSecretKey: USER_GITHUB_TOKEN
       secrets:
         USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
@@ -309,26 +305,23 @@ spec:
           ${{ parameters.proposed_solution }}
 
           ## Acceptance criteria
-
           ${{ parameters.acceptance_criteria }}
+
           {%- if (parameters.scope_boundaries | default('', true)) | trim %}
-
           ## Scope boundaries
-
           ${{ parameters.scope_boundaries }}
           {%- endif %}
+
           {%- if (parameters.dependencies | default('', true)) | trim %}
-
           ## Dependencies
-
           ${{ parameters.dependencies }}
           {%- endif %}
+
           {%- if (parameters.additional_context | default('', true)) | trim %}
-
           ## Additional context
-
           ${{ parameters.additional_context }}
           {%- endif %}
+
         draft: true
         labels:
           - spec
