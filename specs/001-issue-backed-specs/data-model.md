@@ -3,7 +3,7 @@
 ## Spec Authoring Field Set (form input)
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| spec_type | enum: feature, bug, documentation | yes | radio |
+| spec_type | enum: feature, bug, doc | yes | radio |
 | spec_title | string, single line | yes | issue title and PR title |
 | story | string, single line | yes | "As a ____, I can ____" |
 | proposed_solution | text, 10 rows | yes | |

@@ -8,6 +8,8 @@ metadata:
     github.com/project-slug: ${{ values.github_org }}/${{ values.component_name }}
     serverlessops.io/spec-dir: ${{ values.spec_directory }}
     serverlessops.io/spec-number: ${{ values.spec_id | dump }}
+    serverlessops.io/spec-issue: ${{ values.issue_number | string | dump }}
+    serverlessops.io/spec-type: ${{ values.spec_type | dump }}
     backstage.io/source-location: url:https://github.com/${{ values.github_org }}/${{ values.component_name }}/tree/main/${{ values.spec_directory }}/
   tags:
     - speckit
@@ -18,6 +20,9 @@ metadata:
     - url: https://github.com/${{ values.github_org }}/${{ values.component_name }}/blob/main/${{ values.spec_directory }}/plan.md
       title: Implementation plan
       icon: docs
+    - url: ${{ values.issue_url }}
+      title: Spec tracking issue
+      icon: github
 spec:
   type: doc-spec
   owner: ${{ values.owner }}
